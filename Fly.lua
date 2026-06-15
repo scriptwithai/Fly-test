@@ -1,127 +1,137 @@
--- MORN :: Roblox Fly Script v1.0
--- LocalScript → StarterPlayer → StarterPlayerScripts
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
-local player = game.Players.LocalPlayer
-local mouse = player:GetMouse()
+local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
 local flying = false
-local speed = 50  -- базовая скорость
-local bv, bg
+local noclip = false
+local speed = 50
+local linearVel, alignOri, bv, bg
 
--- GUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "MORN_Fly"
+screenGui.Name = "MORN_UltimateFly"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 220, 0, 120)
-mainFrame.Position = UDim2.new(0.5, -110, 0.3, 0)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.Size = UDim2.new(0, 240, 0, 160)
+mainFrame.Position = UDim2.new(0.5, -120, 0.3, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
 mainFrame.Draggable = true
 mainFrame.Parent = screenGui
 
--- Top Bar
 local topBar = Instance.new("Frame")
-topBar.Name = "TopBar"
-topBar.Size = UDim2.new(1, 0, 0, 25)
-topBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+topBar.Size = UDim2.new(1, 0, 0, 28)
+topBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 topBar.BorderSizePixel = 0
 topBar.Parent = mainFrame
 
 local title = Instance.new("TextLabel")
-title.Name = "Title"
-title.Size = UDim2.new(0.7, 0, 1, 0)
-title.Position = UDim2.new(0, 8, 0, 0)
+title.Size = UDim2.new(0.65, 0, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "Fly"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Text = "MORN Fly v2.0"
+title.TextColor3 = Color3.fromRGB(0, 200, 255)
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Font = Enum.Font.SourceSansBold
-title.TextSize = 16
+title.TextSize = 17
 title.Parent = topBar
 
--- Hide button (полоска)
 local hideBtn = Instance.new("TextButton")
-hideBtn.Name = "HideBtn"
-hideBtn.Size = UDim2.new(0, 30, 0, 25)
-hideBtn.Position = UDim2.new(1, -65, 0, 0)
+hideBtn.Size = UDim2.new(0, 35, 0, 28)
+hideBtn.Position = UDim2.new(1, -78, 0, 0)
 hideBtn.BackgroundTransparency = 1
 hideBtn.Text = "−"
-hideBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-hideBtn.TextSize = 20
-hideBtn.Font = Enum.Font.SourceSans
+hideBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+hideBtn.TextSize = 22
 hideBtn.Parent = topBar
 
--- Close button (крест)
 local closeBtn = Instance.new("TextButton")
-closeBtn.Name = "CloseBtn"
-closeBtn.Size = UDim2.new(0, 30, 0, 25)
-closeBtn.Position = UDim2.new(1, -30, 0, 0)
+closeBtn.Size = UDim2.new(0, 35, 0, 28)
+closeBtn.Position = UDim2.new(1, -40, 0, 0)
 closeBtn.BackgroundTransparency = 1
 closeBtn.Text = "×"
-closeBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
-closeBtn.TextSize = 20
+closeBtn.TextColor3 = Color3.fromRGB(255, 60, 60)
+closeBtn.TextSize = 22
 closeBtn.Font = Enum.Font.SourceSansBold
 closeBtn.Parent = topBar
 
--- Speed Slider
-local sliderFrame = Instance.new("Frame")
-sliderFrame.Name = "SliderFrame"
-sliderFrame.Size = UDim2.new(0.9, 0, 0, 20)
-sliderFrame.Position = UDim2.new(0.05, 0, 0.45, 0)
-sliderFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-sliderFrame.BorderSizePixel = 0
-sliderFrame.Parent = mainFrame
-
-local sliderBar = Instance.new("Frame")
-sliderBar.Name = "SliderBar"
-sliderBar.Size = UDim2.new(1, 0, 1, 0)
-sliderBar.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-sliderBar.BorderSizePixel = 0
-sliderBar.Parent = sliderFrame
-
-local sliderKnob = Instance.new("Frame")
-sliderKnob.Name = "Knob"
-sliderKnob.Size = UDim2.new(0, 12, 0, 24)
-sliderKnob.Position = UDim2.new(0.5, -6, 0.5, -12)
-sliderKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-sliderKnob.BorderSizePixel = 0
-sliderKnob.Parent = sliderFrame
-
-local speedLabel = Instance.new("TextLabel")
-speedLabel.Name = "SpeedLabel"
-speedLabel.Size = UDim2.new(1, 0, 0, 20)
-speedLabel.Position = UDim2.new(0, 0, 0.75, 0)
-speedLabel.BackgroundTransparency = 1
-speedLabel.Text = "Speed: 50"
-speedLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-speedLabel.TextSize = 14
-speedLabel.Font = Enum.Font.SourceSans
-speedLabel.Parent = mainFrame
-
--- Fly Toggle Button
 local flyButton = Instance.new("TextButton")
-flyButton.Name = "FlyButton"
-flyButton.Size = UDim2.new(0.9, 0, 0, 30)
-flyButton.Position = UDim2.new(0.05, 0, 0.1, 0)
-flyButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+flyButton.Size = UDim2.new(0.9, 0, 0, 32)
+flyButton.Position = UDim2.new(0.05, 0, 0.12, 0)
+flyButton.BackgroundColor3 = Color3.fromRGB(0, 140, 0)
 flyButton.Text = "FLY: OFF"
 flyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 flyButton.TextSize = 16
 flyButton.Font = Enum.Font.SourceSansBold
 flyButton.Parent = mainFrame
 
--- Логика
+local noclipButton = Instance.new("TextButton")
+noclipButton.Size = UDim2.new(0.9, 0, 0, 28)
+noclipButton.Position = UDim2.new(0.05, 0, 0.38, 0)
+noclipButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+noclipButton.Text = "NOCLIP: OFF"
+noclipButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+noclipButton.TextSize = 14
+noclipButton.Font = Enum.Font.SourceSans
+noclipButton.Parent = mainFrame
+
+local sliderFrame = Instance.new("Frame")
+sliderFrame.Size = UDim2.new(0.9, 0, 0, 22)
+sliderFrame.Position = UDim2.new(0.05, 0, 0.58, 0)
+sliderFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+sliderFrame.BorderSizePixel = 0
+sliderFrame.Parent = mainFrame
+
+local sliderBar = Instance.new("Frame")
+sliderBar.Size = UDim2.new(0.5, 0, 1, 0)
+sliderBar.BackgroundColor3 = Color3.fromRGB(0, 180, 255)
+sliderBar.BorderSizePixel = 0
+sliderBar.Parent = sliderFrame
+
+local sliderKnob = Instance.new("Frame")
+sliderKnob.Size = UDim2.new(0, 14, 0, 28)
+sliderKnob.Position = UDim2.new(0.5, -7, 0.5, -14)
+sliderKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+sliderKnob.BorderSizePixel = 0
+sliderKnob.Parent = sliderFrame
+
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Size = UDim2.new(1, 0, 0, 20)
+speedLabel.Position = UDim2.new(0, 0, 0.78, 0)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Text = "Speed: 50"
+speedLabel.TextColor3 = Color3.fromRGB(210, 210, 210)
+speedLabel.TextSize = 14
+speedLabel.Parent = mainFrame
+
 local function updateSlider(value)
-    speed = math.clamp(value, 0, 100)
-    sliderBar.Size = UDim2.new(speed / 100, 0, 1, 0)
-    sliderKnob.Position = UDim2.new(speed / 100, -6, 0.5, -12)
-    speedLabel.Text = "Speed: " .. math.floor(speed)
+    speed = math.clamp(math.floor(value), 10, 200)
+    local percent = (speed - 10) / 190
+    sliderBar.Size = UDim2.new(percent, 0, 1, 0)
+    sliderKnob.Position = UDim2.new(percent, -7, 0.5, -14)
+    speedLabel.Text = "Speed: " .. speed
+end
+
+local function createConstraints(root)
+    local attachment = root:FindFirstChild("RootAttachment") or Instance.new("Attachment", root)
+    
+    linearVel = Instance.new("LinearVelocity")
+    linearVel.Attachment0 = attachment
+    linearVel.MaxForce = 100000
+    linearVel.VectorVelocity = Vector3.new(0,0,0)
+    linearVel.Parent = root
+    
+    alignOri = Instance.new("AlignOrientation")
+    alignOri.Attachment0 = attachment
+    alignOri.MaxTorque = 100000
+    alignOri.Responsiveness = 150
+    alignOri.Parent = root
 end
 
 local function startFlying()
@@ -130,83 +140,132 @@ local function startFlying()
     local root = character:FindFirstChild("HumanoidRootPart")
     if not root then return end
     
+    if linearVel then linearVel:Destroy() end
+    if alignOri then alignOri:Destroy() end
     if bv then bv:Destroy() end
     if bg then bg:Destroy() end
     
-    bv = Instance.new("BodyVelocity")
-    bv.MaxForce = Vector3.new(400000, 400000, 400000)
-    bv.Velocity = Vector3.new(0, 0, 0)
-    bv.Parent = root
+    local success, err = pcall(createConstraints, root)
+    if not success then
+        -- Fallback
+        bv = Instance.new("BodyVelocity")
+        bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+        bv.Velocity = Vector3.new(0,0,0)
+        bv.Parent = root
+        
+        bg = Instance.new("BodyGyro")
+        bg.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+        bg.P = 3000
+        bg.Parent = root
+    end
     
-    bg = Instance.new("BodyGyro")
-    bg.MaxTorque = Vector3.new(400000, 400000, 400000)
-    bg.P = 3000
-    bg.Parent = root
+    local humanoid = character:FindFirstChild("Humanoid")
+    if humanoid then humanoid.PlatformStand = true end
 end
 
 local function stopFlying()
+    if linearVel then linearVel:Destroy() linearVel = nil end
+    if alignOri then alignOri:Destroy() alignOri = nil end
     if bv then bv:Destroy() bv = nil end
     if bg then bg:Destroy() bg = nil end
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid then humanoid.PlatformStand = false end
+    end
 end
 
 local function updateFly()
     local character = player.Character
     if not character or not flying then return end
     local root = character:FindFirstChild("HumanoidRootPart")
-    if not root or not bv then return end
+    if not root then return end
     
     local moveDir = Vector3.new()
-    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + camera.CFrame.LookVector end
-    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - camera.CFrame.LookVector end
-    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - camera.CFrame.RightVector end
-    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + camera.CFrame.RightVector end
-    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0,1,0) end
-    if game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0,1,0) end
-    
-    if moveDir.Magnitude > 0 then
-        moveDir = moveDir.Unit * speed
+    if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir += camera.CFrame.LookVector end
+    if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir -= camera.CFrame.LookVector end
+    if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir -= camera.CFrame.RightVector end
+    if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir += camera.CFrame.RightVector end
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) or UserInputService:IsKeyDown(Enum.KeyCode.E) then 
+        moveDir += Vector3.new(0,1,0) 
     end
-    bv.Velocity = moveDir
-    bg.CFrame = camera.CFrame
+    if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.Q) then 
+        moveDir -= Vector3.new(0,1,0) 
+    end
+    
+    local finalVel = moveDir.Magnitude > 0 and (moveDir.Unit * speed) or Vector3.new(0,0,0)
+    
+    if linearVel then
+        linearVel.VectorVelocity = finalVel
+        if alignOri then alignOri.CFrame = camera.CFrame end
+    elseif bv then
+        bv.Velocity = finalVel
+        if bg then bg.CFrame = camera.CFrame end
+    end
 end
 
--- Подключения
+-- Noclip
+local function toggleNoclip()
+    noclip = not noclip
+    noclipButton.Text = "NOCLIP: " .. (noclip and "ON" or "OFF")
+    noclipButton.BackgroundColor3 = noclip and Color3.fromRGB(0, 140, 0) or Color3.fromRGB(60, 60, 60)
+end
+
+-- Connections
 flyButton.MouseButton1Click:Connect(function()
     flying = not flying
+    flyButton.Text = "FLY: " .. (flying and "ON" or "OFF")
+    flyButton.BackgroundColor3 = flying and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(0, 140, 0)
     if flying then
-        flyButton.Text = "FLY: ON"
-        flyButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
         startFlying()
     else
-        flyButton.Text = "FLY: OFF"
-        flyButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
         stopFlying()
     end
 end)
 
--- Slider drag
+noclipButton.MouseButton1Click:Connect(toggleNoclip)
+
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.F then
+        flying = not flying
+        flyButton.Text = "FLY: " .. (flying and "ON" or "OFF")
+        flyButton.BackgroundColor3 = flying and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(0, 140, 0)
+        if flying then startFlying() else stopFlying() end
+    end
+end)
+
 local dragging = false
 sliderKnob.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-    end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
 end)
 
-game:GetService("UserInputService").InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
-    end
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
 end)
 
-game:GetService("RunService").RenderStepped:Connect(function()
+RunService.RenderStepped:Connect(function()
     if dragging then
-        local mouseX = mouse.X
-        local sliderPos = sliderFrame.AbsolutePosition.X
-        local sliderWidth = sliderFrame.AbsoluteSize.X
-        local percent = math.clamp((mouseX - sliderPos) / sliderWidth, 0, 1)
-        updateSlider(percent * 100)
+        local mouse = player:GetMouse()
+        local relX = mouse.X - sliderFrame.AbsolutePosition.X
+        local percent = math.clamp(relX / sliderFrame.AbsoluteSize.X, 0, 1)
+        updateSlider(10 + percent * 190)
     end
     updateFly()
+    
+    -- Noclip logic
+    if noclip and player.Character then
+        for _, part in ipairs(player.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+end)
+
+player.CharacterAdded:Connect(function()
+    task.wait(0.8)
+    if flying then startFlying() end
 end)
 
 hideBtn.MouseButton1Click:Connect(function()
@@ -218,7 +277,4 @@ closeBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
 end)
 
--- Инициализация
 updateSlider(50)
-
-[Morn] :: модуль собран, готов к запуску
