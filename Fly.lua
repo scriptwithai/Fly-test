@@ -1,6 +1,3 @@
--- Roblox Ultimate Fly Script v2.1 (Stable 2026)
--- LocalScript → StarterPlayerScripts
-
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
