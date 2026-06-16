@@ -204,7 +204,7 @@ plusCorner.CornerRadius = UDim.new(0, 10)
 plusCorner.Parent = plusBtn
 
 local function updateSpeed(val)
-    speed = math.clamp(math.floor(tonumber(val) or 60), 20, 500)
+    speed = math.clamp(math.floor(tonumber(val) or 60), 10, 250)
     speedBox.Text = tostring(speed)
 end
 
@@ -259,7 +259,7 @@ local function updateFly()
     local camCFrame = camera.CFrame
     local moveDir = hum.MoveDirection
 
-    -- Исправленная логика: W - вперёд, S - назад, D - вправо, A - влево
+    -- Стабильная камера-релативная логика: W — вперёд, S — назад, D — вправо, A — влево
     local forward = camCFrame.LookVector * -moveDir.Z
     local right = camCFrame.RightVector * moveDir.X
     local velocity = (forward + right) * speed
